@@ -9,6 +9,7 @@ if(!defined("IN_MYBB"))
 }
 
 $plugins->add_hook("member_profile_end", "instaroid_profile");
+$plugins->add_hook("index_start", "instaroid_index");
 if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
 	$plugins->add_hook("global_start", "instaroid_alerts");
 }
@@ -76,8 +77,8 @@ function instaroid_install()
  
      // add profile field
      $instaname = array(
-         'name' => $lang->insta_name,
-         'description' => $lang->insta_name_desc,
+         'name' => 'Instaroid Name',
+         'description' => 'Der Instaroid Social Name',
          'type' => 'text',
          'disporder' => $disporder + 1,
          'viewableby' => '-1',
@@ -120,11 +121,6 @@ function instaroid_uninstall()
         $db->drop_column('userfields', $instaname);
     }
 
-    // drop instaroid directory
-    if(file_exists(MYBB_ROOT.'uploads/instaroid')) {
-        rmdir(MYBB_ROOT.'uploads/instaroid');
-     }
-
 }
 
 function instaroid_activate() {
@@ -157,7 +153,7 @@ function instaroid_activate() {
 		'title'		=> 'instaroid_feed',
 		'template'	=> $db->escape_string('<html>
 		<head>
-		<title>{$mybb->settings[\'bbname\']} - {$lang->insta_upload}</title>
+		<title>{$mybb->settings[\'bbname\']} - {$lang->insta}</title>
 		{$headerinclude}</head>
 		<body>
 		{$header}
@@ -187,8 +183,8 @@ function instaroid_activate() {
     $instaroid_feed_bit = [
 		'title'		=> 'instaroid_feed_bit',
 		'template'	=> $db->escape_string('<div class="img">
-        <a href="#insta{$insta[\'iid\']}"><img src="/uploads/instaroid/{$insta[\'name\']}" /></a>
-        <div class="socialname"><strong><a href="member.php?action=profile&uid={$insta[\'uid\']}" target="_blank">@{$instaname}</a></strong></div>
+        <a href="#insta{$insta[\'iid\']}"><img src="uploads/instaroid/{$insta[\'name\']}" /></a>
+        <div class="socialname"><strong><a href="member.php?action=profile&uid={$insta[\'uid\']}" target="_blank">@{$instauname}</a></strong></div>
     </div>
     
     <div id="insta{$insta[\'iid\']}" class="instapop">
@@ -200,21 +196,15 @@ function instaroid_activate() {
           <div class="insta-userinfo">
               <div class="insta-userpicture">
                   <img src="{$picture}" />
-              <div class="insta-socialname"><a href="member.php?action=profile&uid={$insta[\'uid\']}" target="_blank">@{$instaname}</a></div>
-                  {$delete_link}
+              <div class="insta-socialname"><a href="member.php?action=profile&uid={$insta[\'uid\']}" target="_blank">@{$instauname}</a></div>
               </div>
           </div>
           <div class="insta-picture">
               <img src="uploads/instaroid/{$insta[\'name\']}" />
           </div>
-          <div class="insta-description"><strong>{$instaname}</strong> &bull; {$insta[\'desc\']}</div>
+          <div class="insta-description">{$delete_link} <strong>{$instauname}</strong> &bull; {$insta[\'desc\']}</div>
           <div class="insta-comment">
-          <center>
-        <form method="post" action="instaroid.php?action=add_comment&iid={$insta[\'iid\']}">
-            <input type="text" value="Kommentar verfassen"  onfocus="this.value=''" name="entry" class="insta_input" /> 
-            <input type="submit" value="Comment" class="insta_submit celebrity-gradient" />
-        </form>
-    </center>
+          {$instaroid_feed_bit_addcomment}
           </div>
         </div><a href="#closepop" class="closepop"></a>
     </div>'),
@@ -223,6 +213,30 @@ function instaroid_activate() {
 		'dateline'	=> TIME_NOW
     ];
 	$db->insert_query("templates", $instaroid_feed_bit);
+
+    $instaroid_feed_bit_addcomment = [
+		'title'		=> 'instaroid_feed_bit_addcomment',
+		'template'	=> $db->escape_string('<center>
+        <form method="post" action="instaroid.php?action=add_comment&iid={$insta[\'iid\']}">
+            <input type="text" value="Kommentar verfassen"  onfocus="this.value=\'\'" name="entry" class="insta_input" /> 
+            <input type="submit" value="Comment" class="insta_submit" />
+        </form>
+    </center>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_feed_bit_addcomment);
+
+    $instaroid_feed_bit_addcomment_empty = [
+		'title'		=> 'instaroid_feed_bit_addcomment_empty',
+		'template'	=> $db->escape_string('<center>{$lang->insta_socialname_note}</center>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_feed_bit_addcomment_empty);
+
 
     $instaroid_feed_bit_comment = [
 		'title'		=> 'instaroid_feed_bit_comment',
@@ -275,21 +289,31 @@ function instaroid_activate() {
     ];
 	$db->insert_query("templates", $instaroid_feed_bit_tagged);
 
-    $instaroid_forumbit_bit = [
-		'title'		=> 'instaroid_forumbit_bit',
+    $instaroid_index = [
+		'title'		=> 'instaroid_index',
+		'template'	=> $db->escape_string('<div class="thead"> {$lang->insta_hot} <a href="instaroid.php?action=feed">[ {$lang->insta_photofeed} ]</a></div>
+        <div id="instaroid">{$instaroid_index_bit}<br style="clear: both;" /></div><br />'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_index);
+
+    $instaroid_index_bit = [
+		'title'		=> 'instaroid_index_bit',
 		'template'	=> $db->escape_string('<div class="img">
-        <a href="instaroid.php?action=feed#insta{$insta[\'iid\']}"><img src="/uploads/instaroid/{$insta[\'name\']}" /></a>
-        <div class="socialname"><strong><a href="member.php?action=profile&uid={$insta[\'uid\']}">@{$instaname}</a></strong></div>
+        <a href="instaroid.php?action=feed#insta{$insta[\'iid\']}"><img src="uploads/instaroid/{$insta[\'name\']}" /></a>
+        <div class="socialname"><strong><a href="member.php?action=profile&uid={$insta[\'uid\']}">@{$instauname}</a></strong></div>
     </div>'),
 		'sid'		=> '-1',
 		'version'	=> '',
 		'dateline'	=> TIME_NOW
     ];
-	$db->insert_query("templates", $instaroid_forumbit_bit);
+	$db->insert_query("templates", $instaroid_index_bit);
 
     $instaroid_member_profile = [
 		'title'		=> 'instaroid_member_profile',
-		'template'	=> $db->escape_string('<a href="instaroid.php?action=feed#insta{$insta['iid']}"><img src="/uploads/instaroid/{$insta[\'name\']}" /></a>'),
+		'template'	=> $db->escape_string('<div id="instafeed">{$instaroid_feed_bit}</div><br style="clear: both" />'),
 		'sid'		=> '-1',
 		'version'	=> '',
 		'dateline'	=> TIME_NOW
@@ -300,9 +324,9 @@ function instaroid_activate() {
 		'title'		=> 'instaroid_nav',
 		'template'	=> $db->escape_string('<td width="20%" valign="top">
         <div class="thead"><strong>{$lang->insta_navigation}</strong></div>
-        <div class="tcat"><a href="instaroid.php?action=feed">{$lang->insta_photofeed}</a></div>
-        <div class="tcat"><a href="instaroid.php?action=upload">{$lang->insta_upload}</a></div>
-        <div class="tcat"><a href="instaroid.php?action=socialname">{$lang->insta_socialname}</a></div>
+        <div class="trow1"><a href="instaroid.php?action=feed">{$lang->insta_photofeed}</a></div>
+        <div class="trow2"><a href="instaroid.php?action=upload">{$lang->insta_upload}</a></div>
+        <div class="trow1"><a href="instaroid.php?action=socialname">{$lang->insta_socialname}</a></div>
     </td>'),
 		'sid'		=> '-1',
 		'version'	=> '',
@@ -310,14 +334,52 @@ function instaroid_activate() {
     ];
 	$db->insert_query("templates", $instaroid_nav);
 
-    $instaroid_postbit = [
-		'title'		=> 'instaroid_postbit',
-		'template'	=> $db->escape_string('<div class="insta-postbit"><img src="/uploads/instaroid/{$insta[\'name\']}" /></div>'),
+    $instaroid_socialname = [
+		'title'		=> 'instaroid_socialname',
+		'template'	=> $db->escape_string('<html>
+		<head>
+		<title>{$mybb->settings[\'bbname\']} - {$lang->insta_socialname}</title>
+		{$headerinclude}</head>
+		<body>
+		{$header}
+			<form enctype="multipart/form-data" action="instaroid.php" method="post">
+			<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+			<table width="100%" cellspacing="5" cellpadding="5" class="tborder">
+				<tr>
+					{$menu}
+					<td valign="top">
+		{$name_error}
+		<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" width="100%">
+			<tr>
+				<td class="thead" colspan="2"><strong>{$lang->insta_socialname}</strong></td>
+			</tr>
+				<td class="trow1" width="40%" align="justify">
+					<strong>{$lang->insta_socialname_name}</strong>
+					<br /> <span class="smalltext">{$lang->insta_socialname_note}</span>
+				</td>
+				<td class="trow1" width="60%">
+					<input type="text" class="textbox" name="instaname" id="tags" value="{$mybb->user[$instaname]}" size="40" maxlength="1155" style="min-width: 347px; max-width: 100%;" />
+				</td>
+			</tr>
+		</table>
+
+		<br />
+		<div align="center">
+			<input type="hidden" name="action" value="do_socialname" />
+			<input type="submit" class="button" name="submit" value="{$lang->insta_save}" />
+		</div>					
+					</td>
+				</tr>
+			</table>
+			</form>
+		{$footer}
+		</body>
+		</html>'),
 		'sid'		=> '-1',
 		'version'	=> '',
 		'dateline'	=> TIME_NOW
     ];
-	$db->insert_query("templates", $instaroid_postbit);
+	$db->insert_query("templates", $instaroid_socialname);
 
     $instaroid_upload = [
 		'title'		=> 'instaroid_upload',
@@ -394,7 +456,7 @@ function instaroid_activate() {
             $("#tags").select2({
                 placeholder: "{$lang->search_user}",
                 minimumInputLength: 2,
-                maximumSelectionSize: '',
+                maximumSelectionSize: \'\',
                 multiple: true,
                 ajax: { // instead of writing the function to execute the request we use Select2\'s convenient helper
                     url: "xmlhttp.php?action=get_users",
@@ -415,11 +477,11 @@ function instaroid_activate() {
                         var newqueries = [];
                         exp_queries = query.split(",");
                         $.each(exp_queries, function(index, value ){
-                            if(value.replace(/\s/g, '') != "")
+                            if(value.replace(/\\s/g, \'\') != "")
                             {
                                 var newquery = {
-                                    id: value.replace(/,\s?/g, ","),
-                                    text: value.replace(/,\s?/g, ",")
+                                    id: value.replace(/,\\s?/g, ","),
+                                    text: value.replace(/,\\s?/g, ",")
                                 };
                                 newqueries.push(newquery);
                             }
@@ -467,6 +529,11 @@ function instaroid_activate() {
 		$alertTypeManager->add($alertType);
 	}
 
+    // edit templates
+ 	include MYBB_ROOT."/inc/adminfunctions_templates.php";
+ 	find_replace_templatesets("index", "#".preg_quote('{$forums}')."#i", '{$instaroid_index} {$forums}');
+	find_replace_templatesets("member_profile", "#".preg_quote('{$awaybit}')."#i", '{$awaybit} {$instaroid_member_profile}');
+
        // CSS  
 	   $css = array(
         'name' => 'instaroid.css',
@@ -476,7 +543,6 @@ function instaroid_activate() {
             box-sizing: border-box;
             position: relative;
             width: 100%;
-            height: 295px;
             background: #f0f0f0;
             padding: 5px;
         }
@@ -529,13 +595,13 @@ function instaroid_activate() {
         #instaroid .img .socialname,
         #instafeed .img .socialname {
             display: inline-block;
-            background: #e5c000;
+            background: #0072BC;
             color: #fff;
             text-align: center;
             padding: 5px;
             font-size: 7px;
             letter-spacing: 1px;
-            font-family: \'calibri\';
+            font-family: calibri;
             text-transform: uppercase;
             position: absolute;
             bottom: 15px;
@@ -583,8 +649,8 @@ function instaroid_activate() {
                 padding: 5px;
         }
         .insta-userpicture img {
-            width: 40px !important;
             height: 40px !important;
+            width: 40px !important;
             margin-top: 5px;
             margin-left: 20px;
             border-radius: 2px;
@@ -592,13 +658,13 @@ function instaroid_activate() {
         
         .insta-socialname {
             display: inline-block;
-            background: #e8be51;
+            background: #0072BC;
             color: rgba(255,255,255,.9);
             text-align: center;
             padding: 5px;
             font-size: 9px;
             letter-spacing: 1px;
-            font-family: \'calibri\';
+            font-family: calibri;
             text-transform: uppercase;
             margin-left: 15px;
             border-radius: 3px;
@@ -629,7 +695,7 @@ function instaroid_activate() {
             padding: 10px;
             width: 400px;
             border-radius: 5px;
-            font-family: \'Calibri\', sans-serif; font-size: 13px; line-height: 1.2em; color: #6b6b6b; text-align: justify; 
+            font-family: Calibri, sans-serif; font-size: 13px; line-height: 1.2em; color: #6b6b6b; text-align: justify; 
         }
         
         .insta-comments {
@@ -655,7 +721,7 @@ function instaroid_activate() {
             padding: 12px;
             border: none;
             border-radius: 3px;
-            font-family: \'calibri\', sans-serif;
+            font-family: calibri, sans-serif;
             font-size: 9px;
             text-transform: uppercase;
             font-weight: bold;
@@ -664,6 +730,7 @@ function instaroid_activate() {
             bottom: 2px;
             margin-right: 5px;
             color: #f9f9f9;
+            background: #0072BC;
         }
         
         .insta-comment {
@@ -676,7 +743,7 @@ function instaroid_activate() {
             border: 1px solid rgba(0,0,0,.05);
             padding: 10px 30px;
             border-radius: 5px;
-            font-family: \'Calibri\', sans-serif; font-size: 14px; line-height: 1.3em; color: #6b6b6b; text-align: justify; letter-spacing: 0.5px;
+            font-family: Calibri, sans-serif; font-size: 14px; line-height: 1.3em; color: #6b6b6b; text-align: justify; letter-spacing: 0.5px;
             margin: 2px auto;
         }
         
@@ -757,6 +824,11 @@ function instaroid_deactivate() {
     // drop templates
   	$db->delete_query("templates", "title LIKE '%instaroid%'");
 
+    // edit templates
+    require MYBB_ROOT."/inc/adminfunctions_templates.php";
+    find_replace_templatesets("index", "#".preg_quote('{$instaroid_index}')."#i", '', 0);
+    find_replace_templatesets("member_profile", "#".preg_quote('{$instaroid_member_profile}')."#i", '', 0);
+
     if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
 		$alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
 
@@ -779,9 +851,31 @@ function instaroid_deactivate() {
     }
 }
 
+function instaroid_index() {
+    global $db, $mybb, $templates, $lang, $instaroid_index;
+    $lang->load('instaroid');
+
+	$instaroid_index = "";
+	$instaroid_index_bit = "";
+    $instaname = $db->fetch_field($db->simple_select("profilefields", "fid", "name LIKE '%instaroid%'"), "fid");
+    $instaname = 'fid'.$instaname;
+
+	$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC', "limit" => 11]);
+	while($insta = $db->fetch_array($query)) {
+		$instauser = get_user($insta['uid']);
+		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), "fid12");
+		eval("\$instaroid_index_bit .= \"".$templates->get("instaroid_index_bit")."\";");
+	}
+	eval("\$instaroid_index = \"".$templates->get("instaroid_index")."\";");
+
+}
+
 function instaroid_profile() {
-    global $db, $mybb, $memprofile, $templates, $instaroid_member_profile;
+    global $db, $mybb, $memprofile, $templates, $instaroid_feed_bit, $instaroid_member_profile;
     
+    $instaname = $db->fetch_field($db->simple_select("profilefields", "fid", "name LIKE '%instaroid%'"), "fid");
+    $instaname = 'fid'.$instaname;
+
     $query = $db->query("SELECT *, ".TABLE_PREFIX."instaroid_img.iid, ".TABLE_PREFIX."instaroid_img.uid FROM ".TABLE_PREFIX."instaroid_img
     LEFT JOIN ".TABLE_PREFIX."instaroid_img_tags ON ".TABLE_PREFIX."instaroid_img.iid = ".TABLE_PREFIX."instaroid_img_tags.iid
     WHERE ".TABLE_PREFIX."instaroid_img.uid = {$memprofile['uid']}
@@ -789,9 +883,69 @@ function instaroid_profile() {
 	GROUP BY ".TABLE_PREFIX."instaroid_img.iid
     ORDER BY ".TABLE_PREFIX."instaroid_img.iid DESC");
     while($insta = $db->fetch_array($query)) {
-        eval("\$instaroid_member_profile .= \"".$templates->get("instaroid_member_profile")."\";");
-    }
+        $instauser = get_user($insta['uid']);
+        $instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
+        $picture = $instauser['avatar'];
+        $query_2 = $db->simple_select("instaroid_comments", "*", "iid = '{$insta['iid']}' AND uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
+        $instaroid_feed_bit_comment  = "";
+        while($comment = $db->fetch_array($query_2)) {
+            $commentinstaname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$comment['uid']}'"), $instaname);
+            $pattern = "/.*?@([a-zA-Z._\-]*).*?/";
+            preg_match_all($pattern, $comment['desc'], $matches);
+            foreach($matches[1] as $match) {
+                $useruid = $db->fetch_field($db->simple_select("userfields", "ufid", $instaname . " = '{$match}'"), "ufid");
+                $taggeduser = get_user($useruid);
+                $taggedusername = format_name($match, $taggeduser['usergroup'], $taggeduser['displaygroup']);
+                $taggeduserlink = build_profile_link($taggedusername, $useruid, "_blank");   
+                $searchpattern = "/{$match}/";
+                $comment['desc'] = preg_replace($searchpattern, $taggeduserlink, $comment['desc']);             
+            }
+			$delete_link = "";
+			if($mybb->user['uid'] == $comment['uid'] || $mybb->usergroup['cancp'] == 1) {
+				$delete_link = "<a href=\"instaroid.php?action=delete_comment&icd={$comment['icd']}\">[ x ]</a>";
+			}
+            eval("\$instaroid_feed_bit_comment .= \"".$templates->get("instaroid_feed_bit_comment")."\";");   
+        }
+        if(!mysqli_num_rows($query_2)) {
+            eval("\$instaroid_feed_bit_comment = \"".$templates->get("instaroid_feed_bit_comment_none")."\";");
+        }
+        $query_3 = $db->simple_select("instaroid_img_tags", "uid", "iid = '{$insta['iid']}' AND uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
+        $instaroid_feed_bit_tag = "";
+        while($tag = $db->fetch_array($query_3)) {
+            $taguser = get_user($tag['uid']);
+            $tagusername = format_name($taguser['username'], $taguser['usergroup'], $taguser['displaygroup']);
+            $taguserlink = build_profile_link($tagusername, $tag['uid'], "_blank");
+            eval("\$instaroid_feed_bit_tag .= \"".$templates->get("instaroid_feed_bit_tag")."\";"); 
+        }
 
+        $instaroid_feed_bit_tagged = ""; 
+        if(mysqli_num_rows($query_3)) {
+            eval("\$instaroid_feed_bit_tagged = \"".$templates->get("instaroid_feed_bit_tagged")."\";"); 
+        }
+
+        $delete_link = "";
+        if($insta['uid'] == $mybb->user['uid'] || $mybb->usergroup['cancp'] == "1") {
+            $delete_link = "<a href=\"instaroid.php?action=delete&iid={$insta['iid']}\">[x]</a>";
+        }
+
+        $pattern = "/.*?@([a-zA-Z._\-]*).*?/";
+        preg_match_all($pattern, $insta['desc'], $matches);
+        foreach($matches[1] as $match) {
+            $useruid = $db->fetch_field($db->simple_select("userfields", "ufid", $instaname . "= '{$match}'"), "ufid");
+            $taggeduser = get_user($useruid);
+            $taggedusername = format_name($match, $taggeduser['usergroup'], $taggeduser['displaygroup']);
+            $taggeduserlink = build_profile_link($taggedusername, $useruid, "_blank");   
+            $searchpattern = "/{$match}/";
+            $insta['desc'] = preg_replace($searchpattern, $taggeduserlink, $insta['desc']);             
+        }
+        if(!empty($mybb->user[$instaname])) {
+         eval("\$instaroid_feed_bit_addcomment = \"".$templates->get("instaroid_feed_bit_addcomment")."\";");
+        } else {
+            eval("\$instaroid_feed_bit_addcomment = \"".$templates->get("instaroid_feed_bit_addcomment_empty")."\";");
+        }
+        eval("\$instaroid_feed_bit .= \"".$templates->get("instaroid_feed_bit")."\";");
+    }
+    eval("\$instaroid_member_profile = \"".$templates->get("instaroid_member_profile")."\";");
 }
 
 function instaroid_alerts() {

@@ -63,7 +63,7 @@ if($mybb->input['action'] == "do_upload") {
         delete_uploaded_file($target_dir . $filename);
         $insta_error = $lang->insta_error_small;
     }
-    if(empty($instaname)) {
+    if(empty($mybb->user[$instaname])) {
         delete_uploaded_file($target_dir . $filename);
         $insta_error = $lang->insta_no_name;
     }
@@ -100,15 +100,17 @@ if($mybb->input['action'] == "do_upload") {
             }
         }
 
-		$query = $db->simple_select("follow", "fromid", "toid='{$mybb->user['uid']}'");
-		while($follower = $db->fetch_array($query)) {
-			if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
-				$alertType = MybbStuff_MyAlerts_AlertTypeManager::getInstance()->getByCode('instaroid_upload');
-				if ($alertType != NULL && $alertType->getEnabled()) {
-					$alert = new MybbStuff_MyAlerts_Entity_Alert((int)$follower['fromid'], $alertType, (int)$iid);
-					MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
-				}
-			}			
+        if($db->table_exists("follow")) {
+            $query = $db->simple_select("follow", "fromid", "toid='{$mybb->user['uid']}'");
+            while($follower = $db->fetch_array($query)) {
+                if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
+                    $alertType = MybbStuff_MyAlerts_AlertTypeManager::getInstance()->getByCode('instaroid_upload');
+                    if ($alertType != NULL && $alertType->getEnabled()) {
+                        $alert = new MybbStuff_MyAlerts_Entity_Alert((int)$follower['fromid'], $alertType, (int)$iid);
+                        MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
+                    }
+                }			
+            }
         }
     
 
@@ -131,31 +133,44 @@ if($mybb->input['action'] == "upload") {
     eval("\$page = \"".$templates->get("instaroid_upload")."\";");
     output_page($page);
 }
+if($mybb->input['action'] == "do_socialname") {
+
+    $name_error = "";
+    if (preg_match('/[\'^£$%&*()}{@#~?><>,|=+¬]/', $mybb->get_input('instaname')) || preg_match("/\\s/", $mybb->get_input('instaname'))) {
+        $name_error = $lang->instaroid_name_characters;
+    }
+
+    (int)$uid = $mybb->user['uid'];
+    if(empty($name_error)) {
+        $insert_array = [
+            $instaname => $db->escape_string($mybb->get_input('instaname'))
+        ];
+        $db->update_query("userfields", $insert_array, "ufid = '{$uid}'");
+        redirect("instaroid.php?action=socialname");
+    }
+    else {
+		$mybb->input['action'] = "socialname";
+		$name_error = inline_error($name_error);
+    }
+}
 
 if($mybb->input['action'] == "socialname") {
+
+    if(!isset($name_error))
+	{
+		$name_error = "";
+	}
 
     eval("\$page = \"".$templates->get("instaroid_socialname")."\";");
     output_page($page);
 }
 
-if($mybb->input['action'] == "do_socialname") {
-
-    (int)$uid = $mybb->user['uid'];
-     
-    $insert_array = [
-      $instaname => $db->escape_string($mybb->get_input('instaname'))
-    ];
-
-    $db->update_query("profilefields", $insert_array, "ufid = '{$uid}'");
-    redirect("instaroid.php?action=socialname");
-}
-
 if($mybb->input['action'] == "feed") {
 	
 		// MULTIPAGE
-		$query = $db->simple_select("instaroid_img", "COUNT(*) AS numinstas");
+		$query = $db->simple_select("instaroid_img", "COUNT(*) AS numinstas", "uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
 		$usercount = $db->fetch_field($query, "numinstas");
-		$perpage = 15;
+		$perpage = 12;
 		$page = intval($mybb->input['page']);
 		if($page) {
 			$start = ($page-1) *$perpage;
@@ -174,10 +189,10 @@ if($mybb->input['action'] == "feed") {
 	 
 	$query = $db->query("SELECT * FROM ".TABLE_PREFIX."instaroid_img WHERE uid in(SELECT uid FROM ".TABLE_PREFIX."users) ORDER BY iid DESC LIMIT $start, $perpage");
 
-    #$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC']);
     while($insta = $db->fetch_array($query)) {
         $instauser = get_user($insta['uid']);
-        $instaname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
+        $instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
+        $picture = $instauser['avatar'];
         $query_2 = $db->simple_select("instaroid_comments", "*", "iid = '{$insta['iid']}' AND uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
         $instaroid_feed_bit_comment  = "";
         while($comment = $db->fetch_array($query_2)) {
@@ -194,7 +209,7 @@ if($mybb->input['action'] == "feed") {
             }
 			$delete_link = "";
 			if($mybb->user['uid'] == $comment['uid'] || $mybb->usergroup['cancp'] == 1) {
-				$delete_link = "<a href=\"instaroid.php?action=delete_comment&icd={$comment['icd']}\"><i class=\"fas fa-trash-alt\"></i></a>";
+				$delete_link = "<a href=\"instaroid.php?action=delete_comment&icd={$comment['icd']}\">[x]</a>";
 			}
             eval("\$instaroid_feed_bit_comment .= \"".$templates->get("instaroid_feed_bit_comment")."\";");   
         }
@@ -217,7 +232,7 @@ if($mybb->input['action'] == "feed") {
 
         $delete_link = "";
         if($insta['uid'] == $mybb->user['uid'] || $mybb->usergroup['cancp'] == "1") {
-            $delete_link = "<a href=\"instaroid.php?action=delete&iid={$insta['iid']}\"><i class=\"fas fa-trash-alt\"></i></a>";
+            $delete_link = "<a href=\"instaroid.php?action=delete&iid={$insta['iid']}\">[x]</a>";
         }
 
         $pattern = "/.*?@([a-zA-Z._\-]*).*?/";
@@ -230,7 +245,11 @@ if($mybb->input['action'] == "feed") {
             $searchpattern = "/{$match}/";
             $insta['desc'] = preg_replace($searchpattern, $taggeduserlink, $insta['desc']);             
         }
-
+        if(!empty($mybb->user[$instaname])) {
+         eval("\$instaroid_feed_bit_addcomment = \"".$templates->get("instaroid_feed_bit_addcomment")."\";");
+        } else {
+            eval("\$instaroid_feed_bit_addcomment = \"".$templates->get("instaroid_feed_bit_addcomment_empty")."\";");
+        }
         eval("\$instaroid_feed_bit .= \"".$templates->get("instaroid_feed_bit")."\";");
     }
     eval("\$page = \"".$templates->get("instaroid_feed")."\";");
