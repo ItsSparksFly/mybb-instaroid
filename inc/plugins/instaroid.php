@@ -863,7 +863,7 @@ function instaroid_index() {
 	$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC', "limit" => 11]);
 	while($insta = $db->fetch_array($query)) {
 		$instauser = get_user($insta['uid']);
-		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), "fid12");
+		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
 		eval("\$instaroid_index_bit .= \"".$templates->get("instaroid_index_bit")."\";");
 	}
 	eval("\$instaroid_index = \"".$templates->get("instaroid_index")."\";");
