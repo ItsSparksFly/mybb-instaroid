@@ -172,13 +172,13 @@ if($mybb->input['action'] == "feed") {
 		}
 		$multipage = multipage($usercount, $perpage, $page, $_SERVER['PHP_SELF']."?action=feed");
 	 
-	$query = $db->query("SELECT * FROM ".TABLE_PREFIX."instaroid_img ORDER BY iid DESC LIMIT $start, $perpage");
+	$query = $db->query("SELECT * FROM ".TABLE_PREFIX."instaroid_img WHERE uid in(SELECT uid FROM ".TABLE_PREFIX."users) ORDER BY iid DESC LIMIT $start, $perpage");
 
     #$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC']);
     while($insta = $db->fetch_array($query)) {
         $instauser = get_user($insta['uid']);
         $instaname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
-        $query_2 = $db->simple_select("instaroid_comments", "*", "iid = '{$insta['iid']}'");
+        $query_2 = $db->simple_select("instaroid_comments", "*", "iid = '{$insta['iid']}' AND uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
         $instaroid_feed_bit_comment  = "";
         while($comment = $db->fetch_array($query_2)) {
             $commentinstaname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$comment['uid']}'"), $instaname);
@@ -201,7 +201,7 @@ if($mybb->input['action'] == "feed") {
         if(!mysqli_num_rows($query_2)) {
             eval("\$instaroid_feed_bit_comment = \"".$templates->get("instaroid_feed_bit_comment_none")."\";");
         }
-        $query_3 = $db->simple_select("instaroid_img_tags", "uid", "iid = '{$insta['iid']}'");
+        $query_3 = $db->simple_select("instaroid_img_tags", "uid", "iid = '{$insta['iid']}' AND uid in(SELECT uid FROM ".TABLE_PREFIX."users)");
         $instaroid_feed_bit_tag = "";
         while($tag = $db->fetch_array($query_3)) {
             $taguser = get_user($tag['uid']);
