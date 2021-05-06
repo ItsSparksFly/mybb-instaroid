@@ -10,6 +10,10 @@ $l['insta_upload_tags'] = "Charaktere markieren";
 $l['insta_upload_tags_note'] = "Die ausgewählten Charaktere werden in deinem Bild markiert und erhalten eine Benachrichtigung.";
 $l['insta_comment_none'] = "Zu diesem Bild wurden bisher keine Kommentare verfasst :(";
 
+$l['insta_navigation'] = "Navigation";
+$l['insta_photofeed'] = "Zum Photofeed";
+$l['insta_socialnam'] = "Einstellungen: Social Name";
+
 $l['insta_error_small'] = "Dein hochgeladenes Bild muss mind. 400 Pixel breit & hoch sein!";
 $l['insta_error_even'] = "Dein hochgeladenes Bild muss quadratisch sein!";
 $l['insta_no_name'] = "Du hast noch keinen Social Media-Name ausgewählt!";

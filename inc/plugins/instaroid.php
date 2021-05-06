@@ -296,6 +296,148 @@ function instaroid_activate() {
     ];
 	$db->insert_query("templates", $instaroid_member_profile);
 
+    $instaroid_nav = [
+		'title'		=> 'instaroid_nav',
+		'template'	=> $db->escape_string('<td width="20%" valign="top">
+        <div class="thead"><strong>{$lang->insta_navigation}</strong></div>
+        <div class="tcat"><a href="instaroid.php?action=feed">{$lang->insta_photofeed}</a></div>
+        <div class="tcat"><a href="instaroid.php?action=upload">{$lang->insta_upload}</a></div>
+        <div class="tcat"><a href="instaroid.php?action=socialname">{$lang->insta_socialname}</a></div>
+    </td>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_nav);
+
+    $instaroid_postbit = [
+		'title'		=> 'instaroid_postbit',
+		'template'	=> $db->escape_string('<div class="insta-postbit"><img src="/uploads/instaroid/{$insta[\'name\']}" /></div>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_postbit);
+
+    $instaroid_upload = [
+		'title'		=> 'instaroid_upload',
+		'template'	=> $db->escape_string('<html>
+		<head>
+		<title>{$mybb->settings[\'bbname\']} - {$lang->insta_upload}</title>
+		{$headerinclude}</head>
+		<body>
+		{$header}
+			<form enctype="multipart/form-data" action="instaroid.php" method="post">
+			<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+			<table width="100%" cellspacing="5" cellpadding="5" class="tborder">
+				<tr>
+					{$menu}
+					<td valign="top">
+		{$insta_error}
+		<table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}">
+			<tr>
+				<td class="thead" colspan="2"><strong>{$lang->insta_upload}</strong></td>
+			</tr>
+			<tr>
+				<td class="trow1" colspan="2" align="justify">
+					<span class="smalltext">{$lang->insta_upload_note}</span>
+				</td>
+			</tr>
+			<tr>
+				<td class="trow1" width="40%">
+					<strong>{$lang->insta_upload_choose}</strong>
+				</td>
+				<td class="trow1" width="60%">
+					<input type="file" name="instaupload" size="25" class="fileupload" />
+				</td>
+			</tr>
+			<tr>
+				<td class="trow1" width="40%" align="justify">
+					<strong>{$lang->insta_upload_desc}</strong>
+					<br /> <span class="smalltext">{$lang->insta_upload_desc_note}</span>
+				</td>
+				<td class="trow1" width="60%">
+					<textarea name="desc"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td class="trow1" width="40%" align="justify">
+					<strong>{$lang->insta_upload_tags}</strong>
+					<br /> <span class="smalltext">{$lang->insta_upload_tags_note}</span>
+				</td>
+				<td class="trow1" width="60%">
+					<input type="text" class="textbox" name="tags" id="tags" size="40" maxlength="1155" style="min-width: 347px; max-width: 100%;" />
+				</td>
+			</tr>
+		</table>
+
+		<br />
+		<div align="center">
+			<input type="hidden" name="action" value="do_upload" />
+			<input type="submit" class="button" name="submit" value="{$lang->insta_upload}" />
+		</div>					
+					</td>
+				</tr>
+			</table>
+			</form>
+		{$footer}
+		</body>
+		</html>
+	
+	        <link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1807">
+        <script type="text/javascript" src="{$mybb->asset_url}/jscripts/select2/select2.min.js?ver=1806"></script>
+        <script type="text/javascript">
+        <!--
+        if(use_xmlhttprequest == "1")
+        {
+            MyBB.select2();
+            $("#tags").select2({
+                placeholder: "{$lang->search_user}",
+                minimumInputLength: 2,
+                maximumSelectionSize: '',
+                multiple: true,
+                ajax: { // instead of writing the function to execute the request we use Select2\'s convenient helper
+                    url: "xmlhttp.php?action=get_users",
+                    dataType: \'json\',
+                    data: function (term, page) {
+                        return {
+                            query: term, // search term
+                        };
+                    },
+                    results: function (data, page) { // parse the results into the format expected by Select2.
+                        // since we are using custom formatting functions we do not need to alter remote JSON data
+                        return {results: data};
+                    }
+                },
+                initSelection: function(element, callback) {
+                    var query = $(element).val();
+                    if (query !== "") {
+                        var newqueries = [];
+                        exp_queries = query.split(",");
+                        $.each(exp_queries, function(index, value ){
+                            if(value.replace(/\s/g, '') != "")
+                            {
+                                var newquery = {
+                                    id: value.replace(/,\s?/g, ","),
+                                    text: value.replace(/,\s?/g, ",")
+                                };
+                                newqueries.push(newquery);
+                            }
+                        });
+                        callback(newqueries);
+                    }
+                }
+            })
+        }
+        // -->
+        </script>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $instaroid_upload);
+
+
     if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
 		$alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
 
