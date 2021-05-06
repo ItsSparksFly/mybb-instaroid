@@ -1,6 +1,8 @@
 # Instaroid
 Dieses Plugin erweitert euer MyBB-Forum um ein kleines "Bilder Social Network" (wie z.B. Instagram), über das RPG-Charaktere Bilder hochladen können. Diese Bilder können durch andere Charaktere kommentiert werden. Es existiert eine Verknüpfung zu dem Plugin MyAlerts, falls Charaktere in Bildern erwähnt oder ein eigenes Bild kommentiert wird. "Instaroid" ist komplett in MyBB und euer Foren-Design eingebunden. 
 
+Man erreicht instaroid über forum.de/instaroid.php 
+
 # Funktionen
 <ul>
 <li> Hochladen von Bildern
