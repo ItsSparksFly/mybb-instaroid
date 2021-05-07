@@ -13,8 +13,8 @@ $plugins->add_hook("index_start", "instaroid_index");
 if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
 	$plugins->add_hook("global_start", "instaroid_alerts");
 }
-$plugins->add_hook("fetch_wol_activity_end", "insta_online_activity");
-$plugins->add_hook("build_friendly_wol_location_end", "insta_online_location");
+$plugins->add_hook("fetch_wol_activity_end", "instaroid_online_activity");
+$plugins->add_hook("build_friendly_wol_location_end", "instaroid_online_location");
 
 
 function instaroid_info()
