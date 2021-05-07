@@ -18,6 +18,10 @@ $l['insta_socialname_name'] = "Dein Instaroid-Name";
 $l['insta_socialname_note'] = "Um bei Instaroid aktiv zu werden, benötigst du einen <em>Nicknamen</em>.";
 $l['insta_save'] = "Speichern";
 
+$l['insta_online_photofeed'] = "Schaut sich den Photofeed an!";
+$l['insta_online_upload'] = "Lädt ein neues Bild bei Instaroid hoch";
+$l['insta_online_socialname'] = "Social Name-Einstellungen";
+
 $l['insta_error_small'] = "Dein hochgeladenes Bild muss mind. 400 Pixel breit & hoch sein!";
 $l['insta_error_even'] = "Dein hochgeladenes Bild muss quadratisch sein!";
 $l['insta_no_name'] = "Du hast noch keinen Social Media-Name ausgewählt!";

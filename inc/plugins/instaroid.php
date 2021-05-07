@@ -13,6 +13,8 @@ $plugins->add_hook("index_start", "instaroid_index");
 if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
 	$plugins->add_hook("global_start", "instaroid_alerts");
 }
+$plugins->add_hook("fetch_wol_activity_end", "insta_online_activity");
+$plugins->add_hook("build_friendly_wol_location_end", "insta_online_location");
 
 
 function instaroid_info()
@@ -1134,5 +1136,48 @@ function instaroid_alerts() {
     
 }
 
+function instaroid_online_activity($user_activity) {
+    global $parameters;
+    
+        $split_loc = explode(".php", $user_activity['location']);
+        if($split_loc[0] == $user['location']) {
+            $filename = '';
+        } else {
+            $filename = my_substr($split_loc[0], -my_strpos(strrev($split_loc[0]), "/"));
+        }
+        
+        switch ($filename) {
+            case 'instaroid':
+            if($parameters['action'] == "feed" && empty($parameters['site'])) {
+                $user_activity['activity'] = "insta_feed";
+            }
+            if($parameters['action'] == "upload" && empty($parameters['site'])) {
+                $user_activity['activity'] = "insta_upload";
+            }
+            if($parameters['action'] == "socialname" && empty($parameters['site'])) {
+                $user_activity['activity'] = "insta_socialname";
+            }
+            break;
+        }
+          
+    return $user_activity;
+    }
+    
+    function instaroid_online_location($plugin_array) {
+    global $mybb, $theme, $lang;
+    $lang->load('instaroid');
+    
+        if($plugin_array['user_activity']['activity'] == "insta_feed") {
+            $plugin_array['location_name'] = $lang->insta_online_feed;
+        }
+        if($plugin_array['user_activity']['activity'] == "insta_upload") {
+            $plugin_array['location_name'] = $lang->insta_online_upload;
+        }
+        if($plugin_array['user_activity']['activity'] == "insta_socialname") {
+            $plugin_array['location_name'] = $lang->insta_online_socialname;
+        }
+    
+    return $plugin_array;
+    }
 
 ?>
