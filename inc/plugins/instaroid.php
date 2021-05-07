@@ -25,7 +25,7 @@ function instaroid_info()
 	return array(
 		"name"			=> $lang->insta_name,
 		"description"	=> $lang->insta_description,
-		"website"		=> "https://github.com/its-sparks-fly",
+		"website"		=> "https://github.com/itssparksfly",
 		"author"		=> "sparks fly",
 		"authorsite"	=> "https://sparks-fly.info",
 		"version"		=> "1.0",
@@ -92,7 +92,7 @@ function instaroid_install()
      );
  
      $fid = $db->insert_query("profilefields", $instaname);
-     $db->write_query("ALTER TABLE ".TABLE_PREFIX."userfields ADD fid".$fid." TEXT DEFAULT NULL;");
+     $db->write_query("ALTER TABLE ".TABLE_PREFIX."userfields ADD fid".$fid." TEXT NOT NULL;");
 }
 
 function instaroid_is_installed()
