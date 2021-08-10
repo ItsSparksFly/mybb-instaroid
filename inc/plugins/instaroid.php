@@ -862,7 +862,8 @@ function instaroid_index() {
     $instaname = $db->fetch_field($db->simple_select("profilefields", "fid", "name LIKE '%instaroid%'"), "fid");
     $instaname = 'fid'.$instaname;
 
-	$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC', "limit" => 11]);
+	#$query = $db->simple_select("instaroid_img", "*", "", ["order_by" => 'iid', "order_dir" => 'DESC', "limit" => 11]);
+	$query = $db->query("SELECT * FROM ".TABLE_PREFIX."instaroid_img WHERE uid in(SELECT uid FROM ".TABLE_PREFIX."users) ORDER BY iid DESC LIMIT 11");
 	while($insta = $db->fetch_array($query)) {
 		$instauser = get_user($insta['uid']);
 		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
