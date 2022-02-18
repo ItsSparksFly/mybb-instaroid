@@ -62,6 +62,9 @@ function instaroid_install()
         PRIMARY KEY (`itid`),
         KEY `itid` (`itid`)
      ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci AUTO_INCREMENT=1");
+	
+	
+    $db->query("ALTER TABLE `mybb_users` ADD `instaroid_index` TINYINT NOT NULL AFTER `usernotes`;");
 
 
      if(!file_exists(MYBB_ROOT.'uploads/instaroid')) {
@@ -500,6 +503,22 @@ function instaroid_activate() {
 		'dateline'	=> TIME_NOW
     ];
 	$db->insert_query("templates", $instaroid_upload);
+	
+    $usercp_options_instaroid_index = [
+		'title'		=> 'usercp_options_instaroid_index',
+		'template'	=> $db->escape_string('<tr>
+<td valign="top" width="1"><input type="checkbox" class="checkbox" name="instaroid_index" id="instaroid_index" value="1" {$instaroid_indexcheck} /></td>
+<td><span class="smalltext"><label for="instaroid_index">Soll die Instaroid-Anzeige auf dem Index versteckt werden?</label></span></td>
+</tr>
+<tr>
+<td valign="top"><input type="checkbox" class="checkbox" name="instaroid_index_all" id="instaroid_index_all" value="1" {$instaroid_indexcheck_all} /></td>
+<td><span class="smalltext"><label for="instaroid_index_all">Soll die Instaroid-Einstellung für alle Charaktere übernommen werden?</label></span></td>
+</tr>'),
+		'sid'		=> '-1',
+		'version'	=> '',
+		'dateline'	=> TIME_NOW
+    ];
+	$db->insert_query("templates", $usercp_options_instaroid_index);
 
 
     if(class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
@@ -869,7 +888,9 @@ function instaroid_index() {
 		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
 		eval("\$instaroid_index_bit .= \"".$templates->get("instaroid_index_bit")."\";");
 	}
-	eval("\$instaroid_index = \"".$templates->get("instaroid_index")."\";");
+	if($instaroid_index_setting == 0) {
+		eval("\$instaroid_index = \"".$templates->get("instaroid_index")."\";");
+	}
 
 }
 
@@ -1180,5 +1201,60 @@ function instaroid_online_activity($user_activity) {
     
     return $plugin_array;
     }
+
+$plugins->add_hook("usercp_do_options_end", "instaroid_usercp_options");
+$plugins->add_hook("usercp_options_start", "instaroid_usercp");
+
+function instaroid_usercp() {
+
+    global $mybb, $user, $templates, $instaroid_indexcheck, $instaroid_index, $instaroid_indexcheck_all;
+
+    if(isset($mybb->user['instaroid_index']) && $mybb->user['instaroid_index'] == 1)
+    {
+        $instaroid_indexcheck = "checked=\"checked\"";
+    }
+    else
+    {
+        $instaroid_indexcheck = "";
+    }
+    if(isset($mybb->user['instaroid_index_all']) && $mybb->user['instaroid_index_all'] == 1)
+    {
+        $instaroid_indexcheck_all = "checked=\"checked\"";
+    }
+    else
+    {
+        $instaroid_indexcheck_all = "";
+    }
+
+    eval("\$instaroid_index = \"".$templates->get("usercp_options_instaroid_index")."\";");
+
+}
+
+function instaroid_usercp_options()
+{
+    global $mybb, $db;
+
+    $instaroid_index = $mybb->get_input ('instaroid_index', MyBB::INPUT_INT);
+    $instaroid_index_all = $mybb->input['instaroid_index_all'];
+    
+    //Wer ist online, Wer ist Hauptaccount.
+    $this_user = intval ($mybb->user['uid']);
+    $as_uid = intval ($mybb->user['as_uid']);
+    
+    //Soll für alle Charaktere übernommen werden oder nicht?
+    if ($instaroid_index_all == 1) {
+        //Ja, alle raussuchen
+        if ($as_uid == 0) {
+            $id = intval ($mybb->user['uid']);
+        } else {
+            $id = intval ($mybb->user['as_uid']);
+        }
+        //speichern
+        $db->query ("UPDATE " . TABLE_PREFIX . "users SET instaroid_index =" . $instaroid_index . " WHERE uid=" . $id . " OR as_uid=" . $id . "");
+    } else {
+        //nur für aktuellen Charakter speichern
+        $db->query ("UPDATE " . TABLE_PREFIX . "users SET instaroid_index =" . $instaroid_index . " WHERE uid=" . $this_user . "");
+    }
+} 
 
 ?>
