@@ -888,7 +888,7 @@ function instaroid_index() {
 		$instauname = $db->fetch_field($db->simple_select("userfields", $instaname, "ufid = '{$insta['uid']}'"), $instaname);
 		eval("\$instaroid_index_bit .= \"".$templates->get("instaroid_index_bit")."\";");
 	}
-	if($instaroid_index_setting == 0) {
+	if($mybb->user['instaroid_index'] == 0) {
 		eval("\$instaroid_index = \"".$templates->get("instaroid_index")."\";");
 	}
 
